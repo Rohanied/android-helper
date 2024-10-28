@@ -1,4 +1,4 @@
-package com.example.androidhelper.utils
+package com.a4b.androidhelper.utils
 
 import com.intellij.openapi.vfs.VirtualFile
 
@@ -19,8 +19,14 @@ object FragmentGenerator {
             
             class ${featureName}Fragment : Fragment() {
             
+            
+            
             }
         """.trimIndent()
         FileUtil.createFileWithContent(baseDir, fragmentFileName, fragmentContent)
     }
 }
+
+
+
+

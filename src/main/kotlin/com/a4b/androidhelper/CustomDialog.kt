@@ -1,8 +1,7 @@
-package com.example.androidhelper
+package com.a4b.androidhelper
 
 
-import ai.grazie.text.find
-import com.example.androidhelper.utils.*
+import com.a4b.androidhelper.utils.*
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
@@ -16,6 +15,7 @@ import java.awt.*
 class CustomDialog(private val project: Project, private val selectedDirectory: VirtualFile) : DialogWrapper(true) {
     private val inputField1 = JTextField()
     private val inputField2 = JTextField()
+    private val jsonTextField = JTextField()
     private val hintText1 = JLabel("Example : Login")
     private val hintText2 = JLabel("Example : Login with Forget password")
     private val headerText1 = JLabel("AI Helper - Experiment")
@@ -26,12 +26,18 @@ class CustomDialog(private val project: Project, private val selectedDirectory: 
     private val okButton = JButton("OK")
     private val cancelButton = JButton("Cancel")
 
+    private var isJsonCreationEnabled = false
+
     private val divider = JPanel()
+
+
+    private var createCaching = true
+
 
     init {
         init()
         title = "Custom Dialog"
-        setSize(500, 100) // Set the desired size
+        setSize(500, 400) // Set the desired size
 
         // Customize hint text properties
         hintText1.font = hintText1.font.deriveFont(11f) // Set font size
@@ -49,7 +55,7 @@ class CustomDialog(private val project: Project, private val selectedDirectory: 
         val panel = JPanel()
         panel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
 
-        // Two line text/label
+        // Two-line text/label
         val label1 = JLabel("Enter the feature name")
         label1.horizontalAlignment = SwingConstants.LEFT
         val label1Panel = JPanel(FlowLayout(FlowLayout.LEFT))
@@ -57,16 +63,49 @@ class CustomDialog(private val project: Project, private val selectedDirectory: 
         panel.add(label1Panel)
         panel.add(Box.createRigidArea(Dimension(0, 10))) // Spacer
 
-        // Input layout with hint text
-        val inputPanel1 = JPanel(BorderLayout())
-        inputPanel1.add(inputField1, BorderLayout.CENTER)
-        val hintPanel1 = JPanel(BorderLayout())
-        hintPanel1.add(hintText1, BorderLayout.CENTER)
-        inputPanel1.add(hintPanel1, BorderLayout.SOUTH)
-        panel.add(inputPanel1)
+        // Create a panel to wrap the JTextField
+        val textFieldPanel = JPanel()
+        textFieldPanel.layout = BoxLayout(textFieldPanel, BoxLayout.Y_AXIS)
+        inputField1.preferredSize = Dimension(200, 30) // Set fixed width and height
+
+        // Add the JTextField to the panel
+        textFieldPanel.add(inputField1)
+        panel.add(textFieldPanel)
         panel.add(Box.createRigidArea(Dimension(0, 10))) // Spacer
 
-        panel.add(divider, BorderLayout.SOUTH)
+        // Divider
+        val divider = JSeparator()
+        panel.add(divider)
+
+        // Spacer after the divider
+        panel.add(Box.createRigidArea(Dimension(0, 10)))
+
+        // Add checkbox and conditional text field visibility
+        val checkBox = JCheckBox("Add Response JSON")
+        jsonTextField.isVisible = false // Initially hide the text field
+
+        checkBox.addActionListener {
+            jsonTextField.isVisible = checkBox.isSelected // Show/Hide text field based on checkbox state
+            panel.revalidate()  // Revalidate the layout to adjust for visibility changes
+            panel.repaint()
+            isJsonCreationEnabled = checkBox.isSelected// Repaint the panel to reflect changes
+        }
+
+        // Add checkbox and text field to the panel
+        panel.add(checkBox)
+        panel.add(Box.createRigidArea(Dimension(0, 5))) // Spacer between checkbox and text field
+        panel.add(jsonTextField)
+
+//        return panel // Return the constructed panel
+
+// Adjust layout to update visibility when components change size
+//        val frame = JFrame("UI Example")
+//        frame.defaultCloseOperation = JFrame.EXIT_ON_CLOSE
+//        frame.setSize(400, 300)
+//        frame.add(panel)
+//        frame.isVisible = true
+//        frame.pack() // Adjusts the frame size to accommodate all components
+
 
 //        // Header text with divider
 //        val headerPanel1 = JPanel(BorderLayout())
@@ -131,6 +170,8 @@ class CustomDialog(private val project: Project, private val selectedDirectory: 
             val input2 = inputField2.text
             val checkboxSelected = checkbox.isSelected
 
+            val json = jsonTextField.text
+
 
             ApplicationManager.getApplication().runWriteAction {
                 try {
@@ -144,29 +185,47 @@ class CustomDialog(private val project: Project, private val selectedDirectory: 
                     /*      */val domainRepoDir = FileUtil.createDirectory(domainDir, "repository")
                     /*      */
                     /*      */
-                    /*           */RepositoryGenerator.createRepositoryFiles(domainRepoDir, input1)
+                    /*           */RepositoryGenerator.createRepositoryFiles(domainRepoDir, input1,createCaching)
                     /*      */
                     /*      */
                     /*      */val usecaseDir = FileUtil.createDirectory(domainDir, "usecase")
                     /*      */
                     /*      */
-                    /*           */UseCaseGenerator.createUseCaseFiles(usecaseDir, input1, domainRepoDir.url)
+                    /*           */UseCaseGenerator.createUsesCaseForRepo(usecaseDir, domainRepoDir, input1)
+                    /*           */UseCaseGenerator.createMainUseCaseFile(usecaseDir, input1, domainRepoDir)
                     /**/
                     /**/
                     /*  */val dataDir = FileUtil.createDirectory(newDir, "data")
                     /*  */
                     /*  */
                     /*      */val dataModelDir = FileUtil.createDirectory(dataDir, "model")
+                    /*      */
+                    /*      */
+                    /*           */val dataClassName = DataClassGenerator.createDataClassFile(dataModelDir, json, input1, createCaching)
+                    /*      */
+                    /*      */
                     /*      */val dataRepoDir = FileUtil.createDirectory(dataDir, "repository")
                     /*      */
                     /*      */
-                    /*           */RepositoryImplGenerator.createRepositoryFiles(dataRepoDir, input1, domainRepoDir.url)
+                    /*           */RepositoryImplGenerator.createRepositoryFiles(dataRepoDir, input1, domainRepoDir.url, createCaching, "","")
                     /*      */
                     /*      */
                     /*      */val sourceDir = FileUtil.createDirectory(dataDir, "source")
                     /*      */
                     /*      */
                     /*           */val localSource = FileUtil.createDirectory(sourceDir, "local")
+                    /*           */
+                    /*           */
+                    /*                 */if(createCaching){
+
+                    /*                       */val daoDir = FileUtil.createDirectory(localSource, "dao")
+                    /*                       */DaoGenerator.createFragmentFiles(daoDir, input1, dataModelDir, dataClassName)
+                    /*                       */
+                    /*                       */
+                    /*                       */
+                    /*                 */}
+                    /*           */
+                    /*           */
                     /*           */val remoteSource = FileUtil.createDirectory(sourceDir, "remote")
                     /**/
                     /**/
@@ -188,10 +247,13 @@ class CustomDialog(private val project: Project, private val selectedDirectory: 
                     /*      */val viewmodelDir = FileUtil.createDirectory(presentationDir, "viewmodel")
                     /*      */
                     /*      */
-                    /*           */ViewModelGenerator.createViewModelFiles(viewmodelDir,input1, usecaseDir.url)
+                    /*           */ViewModelGenerator.createViewModelFiles(viewmodelDir,input1, usecaseDir.url, createCaching)
                     /*      */
                     /*      */
-                    /*      */val state = FileUtil.createDirectory(presentationDir, "state")
+                    /*      */val stateDir = FileUtil.createDirectory(presentationDir, "state")
+                    /*      */
+                    /*      */
+                    /*           */UIStateGenerator.createUiStateFile(stateDir, input1, createCaching)
 
 
 
