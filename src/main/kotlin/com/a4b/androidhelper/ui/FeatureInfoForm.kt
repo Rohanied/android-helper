@@ -51,6 +51,10 @@ public class FeatureInfoForm(private val project: Project, private val selectedD
             onSaveClick()
         }
 
+        cancelButton.addActionListener {
+            dispose()
+        }
+
     }
 
 
@@ -94,6 +98,12 @@ public class FeatureInfoForm(private val project: Project, private val selectedD
         repaint() // Redraw UI components
     }
 
+    private fun showErrorDialogBox(message: String){
+        ApplicationManager.getApplication().invokeLater {
+            Messages.showErrorDialog(project, message, "Error")
+        }
+    }
+
     private fun onSaveClick(){
 
         val isCachingEnabled = enableCachingCheckBox.isSelected
@@ -101,6 +111,17 @@ public class FeatureInfoForm(private val project: Project, private val selectedD
         val jsonText = jsonText.text
         val apiClientPackage = apiClientPackage.text
         val appDatabaseProviderPackage = appDatabaseProviderPackage.text
+
+
+        if(isCachingEnabled && !CommonUtils.isValidJson(jsonText)){
+            showErrorDialogBox("json is not valid")
+            return
+        }
+
+        if(isCachingEnabled && !CommonUtils.hasSingleDataProperty(jsonText)){
+            showErrorDialogBox("data object is not present")
+            return
+        }
 
         ApplicationManager.getApplication().runWriteAction {
             try {

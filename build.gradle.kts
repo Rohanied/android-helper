@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.example"
-version = "1.0-SNAPSHOT"
+version = "3.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -35,14 +35,14 @@ tasks {
         untilBuild.set("242.*")
     }
 
-    signPlugin {
-        certificateChain.set(System.getenv("CERTIFICATE_CHAIN"))
-        privateKey.set(System.getenv("PRIVATE_KEY"))
-        password.set(System.getenv("PRIVATE_KEY_PASSWORD"))
-    }
+//    signPlugin {
+//        certificateChain.set(File(System.getenv("CERTIFICATE_CHAIN") ?: "./certs/chain.crt").readText(Charsets.UTF_8))
+//        privateKey.set(System.getenv("PRIVATE_KEY"))
+//        password.set(System.getenv("PRIVATE_KEY_PASSWORD"))
+//    }
 
     publishPlugin {
-        token.set(System.getenv("PUBLISH_TOKEN"))
+        token.set("perm:cm9oYW4ud2JrYw==.OTItMTEwOTc=.AVna0fQdIZzmj8u7uOIECLB3hrcFnF")
     }
 }
 
